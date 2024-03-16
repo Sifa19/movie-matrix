@@ -2,7 +2,12 @@ import { useState } from "react"
 
 
 export default function TextExpander({
-    data = "add some text...", fontSize = "1rem", fontColor = "#fff", buttonColor = "blue"
+    data = "add some text...",
+    showDefault = false,
+    fontSize = "1rem",
+    fontColor = "#fff",
+    buttonColor = "blue",
+    startStyle = ""
 }) {
 
     const textStyle = {
@@ -15,23 +20,29 @@ export default function TextExpander({
 
     }
 
-    const [showData, setShowData] = useState(false)
+    const [showData, setShowData] = useState(showDefault)
 
-    const lessData = data.slice(100)
+    const lessData = data.slice(0, 100)
 
-    return <div style={textStyle}>
+    return <div style={textStyle} className={startStyle}>
         {
             showData ?
-                <>{data}<span
-                    style={buttonStyle}
-                    role="button"
-                    onClick={() => setShowData(false)}>
-                    show less</span></> :
-                <>{lessData}<span
-                    style={buttonStyle}
-                    role="button"
-                    onClick={() => setShowData(true)}>
-                    ...show more</span></>
+                <>
+                    {data}
+                    <span
+                        style={buttonStyle}
+                        role="button"
+                        onClick={() => setShowData(false)}>
+                        show less</span>
+                </> :
+                <>
+                    {lessData}
+                    <span
+                        style={buttonStyle}
+                        role="button"
+                        onClick={() => setShowData(true)}>
+                        ...show more</span>
+                </>
         }
 
     </div>

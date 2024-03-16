@@ -60,23 +60,27 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState("")
   const [query, setQuery] = useState("interstellar")
-  const [selectedMovie, setSelectedMovie] = useState(tempMovieData[0])
+  const [selectedMovieId, setSelectedMovieID] = useState(tempMovieData[0])
   const [showMovieDetails, setShowMovieDetails] = useState(false)
 
+  // http://www.omdbapi.com/?apikey=${KEY}&s=${query}&plot=full
+
+  // http://www.omdbapi.com/?apikey=${KEY}t=harry&plot=full
+
+  // https://tv-api.com/en/API/SearchMovie/k_b58hmvfi/inception 2010
 
   useEffect(function () {
     async function fetchMovies() {
       try {
         setIsError("")
         const res = await fetch(
-          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}&plot=full`
         );
         // console.log(res);
         if (!res.ok)
           throw new Error("message..");
 
         const data = await res.json();
-        console.log(data);
 
         if (data.Response === 'False')
           throw new Error("movie not found")
@@ -114,15 +118,14 @@ export default function App() {
         <Box>
           {isLoading && <Loading />}
           {!isLoading && !isError &&
-            <List data={movies} setSelectedMovie={setSelectedMovie} setShowMovieDetails={setShowMovieDetails} />}
+            <List data={movies} setSelectedMovieID={setSelectedMovieID} setShowMovieDetails={setShowMovieDetails} />}
           {isError && <Error message={isError} />}
         </Box>
         <Box>
-          {/* <AddStarRating />
-          <AddTextExpander /> */}
           {
             showMovieDetails ?
-              <MovieDetails selectedMovie={selectedMovie}
+              <MovieDetails
+                selectedMovieId={selectedMovieId}
                 setShowMovieDetails={setShowMovieDetails} />
               :
               <>
@@ -135,7 +138,7 @@ export default function App() {
                     <span>⌛132min</span>
                   </div>
                 </div>
-                <List data={watchedMovies} setSelectedMovie={setSelectedMovie} setShowMovieDetails={setShowMovieDetails} />
+                <List data={watchedMovies} setSelectedMovieID={setSelectedMovieID} setShowMovieDetails={setShowMovieDetails} />
               </>
           }
         </Box>
@@ -191,10 +194,10 @@ function Box({ children }) {
   );
 }
 
-function List({ data, setSelectedMovie, setShowMovieDetails }) {
+function List({ data, setSelectedMovieID, setShowMovieDetails }) {
 
   function handleSetMovie(movie) {
-    setSelectedMovie(s => movie)
+    setSelectedMovieID(s => movie.imdbID)
     setShowMovieDetails(true)
   }
 
@@ -213,43 +216,79 @@ function List({ data, setSelectedMovie, setShowMovieDetails }) {
   );
 }
 
-function MovieDetails({ selectedMovie, setShowMovieDetails }) {
-  return <div className="movie-details">
-    <button onClick={() => setShowMovieDetails(false)}>{"<-"}</button>
-    {selectedMovie.Title}
+function MovieDetails({ selectedMovieId, setShowMovieDetails }) {
+
+  const [movie, setMovie] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [starRating, setStarRating] = useState(0);
+
+  useEffect(function () {
+    async function getMovieDetails() {
+      try {
+        const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&i=${selectedMovieId}&plot=full`)
+
+        if (!res.ok)
+          throw new Error("Data Not Found")
+
+        const data = await res.json();
+        console.log(data);
+        setMovie(data)
+        setIsLoading(false)
+      }
+      catch (err) {
+        console.log(err);
+      }
+    }
+
+    getMovieDetails()
+  }, [selectedMovieId])
+
+  return <>
+    {
+      isLoading ?
+        <Loading /> :
+        <div className="movie-details">
+          <Button setShowMovieDetails={setShowMovieDetails} />
+          <Movie movie={movie} />
+          <StarRating
+            maxRating={5}
+            setStarRating={setStarRating}
+            size="1.8"
+            startStyle="star-container"
+            key={selectedMovieId + 10} />
+          <TextExpander
+            data={movie.Plot}
+            showDefault={false}
+            fontSize="14px"
+            fontColor="#adb5bd"
+            buttonColor="#6741d9"
+            startStyle="text-container"
+            key={selectedMovieId}
+          />
+          <p>Starring : {movie.Actors}</p>
+          <p>Directed By : {movie.Director}</p>
+        </div>
+    }
+  </>
+}
+
+function Button({ setShowMovieDetails }) {
+  return <button className="btn-movie-details"
+    onClick={() => setShowMovieDetails(false)}>
+    &larr;
+  </button>
+}
+
+function Movie({ movie }) {
+  return <div className="details">
+    <img src={movie.Poster} alt={movie.Title} />
+    <div>
+      <h3> {movie.Title}</h3>
+      <span>{movie.DVD}  &#9679; {movie.Runtime}</span>
+      <span>{movie.Genre}</span>
+      <p> ⭐{movie.Ratings[0].Value.slice(0, 3)} IMDB rating</p>
+    </div>
   </div>
 }
 
-function AddStarRating() {
-  const [starRating, setStarRating] = useState(0);
 
-  return (
-    <div>
-      <StarRating
-        maxRating={5}
-        defaultRating={0}
-        setStarRating={setStarRating}
-        size={"1rem"}
-      />
-      <p>This movie was rated {starRating} stars</p>
-    </div>
-  );
-  // <StarRating maxRating={10} defaultRating={0} size={"1rem"} color={"blue"} />
-  /* <StarRating maxRating={5} color={"red"} size={"1rem"} /> */
-  /* <StarRating /> */
-}
-
-function AddTextExpander() {
-  const data =
-    "Lorem ipsum dolor sit amet consectetur adipisicing elit. Eveniet exercitationem ipsa velit optio esse asperiores cumque possimus placeat commodi, iste voluptas quibusdam sequi nesciunt delectus, laudantium libero natus! Amet, velit.";
-  return (
-    <div>
-      <TextExpander
-        data={data}
-        fontSize="14px"
-        fontColor="#adb5bd"
-        buttonColor="#6741d9"
-      />
-    </div>
-  );
-}
