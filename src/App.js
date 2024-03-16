@@ -60,6 +60,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState("")
   const [query, setQuery] = useState("interstellar")
+  const [selectedMovie, setSelectedMovie] = useState(tempMovieData[0])
+  const [showMovieDetails, setShowMovieDetails] = useState(false)
 
 
   useEffect(function () {
@@ -112,22 +114,30 @@ export default function App() {
         <Box>
           {isLoading && <Loading />}
           {!isLoading && !isError &&
-            <List data={movies} />}
+            <List data={movies} setSelectedMovie={setSelectedMovie} setShowMovieDetails={setShowMovieDetails} />}
           {isError && <Error message={isError} />}
         </Box>
         <Box>
           {/* <AddStarRating />
           <AddTextExpander /> */}
-          <div className="summary">
-            <h4>MOVIES YOU WATCHED</h4>
-            <div className="summary-details">
-              <span>🎞️2 Movies</span>
-              <span>⭐8.65</span>
-              <span>🌟9.5</span>
-              <span>⌛132min</span>
-            </div>
-          </div>
-          <List data={movies} />
+          {
+            showMovieDetails ?
+              <MovieDetails selectedMovie={selectedMovie}
+                setShowMovieDetails={setShowMovieDetails} />
+              :
+              <>
+                <div className="summary">
+                  <h4>MOVIES YOU WATCHED</h4>
+                  <div className="summary-details">
+                    <span>🎞️2 Movies</span>
+                    <span>⭐8.65</span>
+                    <span>🌟9.5</span>
+                    <span>⌛132min</span>
+                  </div>
+                </div>
+                <List data={watchedMovies} setSelectedMovie={setSelectedMovie} setShowMovieDetails={setShowMovieDetails} />
+              </>
+          }
         </Box>
       </div>
     </div>
@@ -181,12 +191,17 @@ function Box({ children }) {
   );
 }
 
-function List({ data, setSelected, setSelectedMovie }) {
+function List({ data, setSelectedMovie, setShowMovieDetails }) {
+
+  function handleSetMovie(movie) {
+    setSelectedMovie(s => movie)
+    setShowMovieDetails(true)
+  }
 
   return (
     <ul className="list">
       {data.map((i) => (
-        <li key={i.imdbID}>
+        <li key={i.imdbID} onClick={() => handleSetMovie(i)}>
           <img src={i.Poster} alt={i.Title} />
           <div>
             <h4>{i.Title}</h4>
@@ -198,6 +213,12 @@ function List({ data, setSelected, setSelectedMovie }) {
   );
 }
 
+function MovieDetails({ selectedMovie, setShowMovieDetails }) {
+  return <div className="movie-details">
+    <button onClick={() => setShowMovieDetails(false)}>{"<-"}</button>
+    {selectedMovie.Title}
+  </div>
+}
 
 function AddStarRating() {
   const [starRating, setStarRating] = useState(0);
