@@ -61,7 +61,6 @@ export default function App() {
   const [isError, setIsError] = useState("")
   const [query, setQuery] = useState("interstellar")
   const [selectedMovieId, setSelectedMovieID] = useState(tempMovieData[0])
-  const [showMovieDetails, setShowMovieDetails] = useState(false)
 
   // http://www.omdbapi.com/?apikey=${KEY}&s=${query}&plot=full
 
@@ -118,15 +117,16 @@ export default function App() {
         <Box>
           {isLoading && <Loading />}
           {!isLoading && !isError &&
-            <List data={movies} setSelectedMovieID={setSelectedMovieID} setShowMovieDetails={setShowMovieDetails} />}
+            <List data={movies}
+              setSelectedMovieID={setSelectedMovieID} />}
           {isError && <Error message={isError} />}
         </Box>
         <Box>
           {
-            showMovieDetails ?
+            selectedMovieId.length > 0 ?
               <MovieDetails
                 selectedMovieId={selectedMovieId}
-                setShowMovieDetails={setShowMovieDetails} />
+                setSelectedMovieID={setSelectedMovieID} />
               :
               <>
                 <div className="summary">
@@ -138,7 +138,8 @@ export default function App() {
                     <span>⌛132min</span>
                   </div>
                 </div>
-                <List data={watchedMovies} setSelectedMovieID={setSelectedMovieID} setShowMovieDetails={setShowMovieDetails} />
+                <List data={watchedMovies}
+                  setSelectedMovieID={setSelectedMovieID} />
               </>
           }
         </Box>
@@ -194,17 +195,18 @@ function Box({ children }) {
   );
 }
 
-function List({ data, setSelectedMovieID, setShowMovieDetails }) {
+function List({ data, setSelectedMovieID }) {
 
   function handleSetMovie(movie) {
     setSelectedMovieID(s => movie.imdbID)
-    setShowMovieDetails(true)
   }
 
   return (
     <ul className="list">
       {data.map((i) => (
-        <li key={i.imdbID} onClick={() => handleSetMovie(i)}>
+        <li key={i.imdbID}
+          onClick={() => handleSetMovie(i)}
+          className="list-hover-effect">
           <img src={i.Poster} alt={i.Title} />
           <div>
             <h4>{i.Title}</h4>
@@ -216,9 +218,9 @@ function List({ data, setSelectedMovieID, setShowMovieDetails }) {
   );
 }
 
-function MovieDetails({ selectedMovieId, setShowMovieDetails }) {
+function MovieDetails({ selectedMovieId, setSelectedMovieID }) {
 
-  const [movie, setMovie] = useState([]);
+  const [movie, setMovie] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [starRating, setStarRating] = useState(0);
 
@@ -248,7 +250,8 @@ function MovieDetails({ selectedMovieId, setShowMovieDetails }) {
       isLoading ?
         <Loading /> :
         <div className="movie-details">
-          <Button setShowMovieDetails={setShowMovieDetails} />
+          <Button
+            setSelectedMovieID={setSelectedMovieID} />
           <Movie movie={movie} />
           <StarRating
             maxRating={5}
@@ -261,7 +264,7 @@ function MovieDetails({ selectedMovieId, setShowMovieDetails }) {
             showDefault={false}
             fontSize="14px"
             fontColor="#adb5bd"
-            buttonColor="#6741d9"
+            buttonColor="#7950f2"
             startStyle="text-container"
             key={selectedMovieId}
           />
@@ -272,9 +275,9 @@ function MovieDetails({ selectedMovieId, setShowMovieDetails }) {
   </>
 }
 
-function Button({ setShowMovieDetails }) {
+function Button({ setSelectedMovieID }) {
   return <button className="btn-movie-details"
-    onClick={() => setShowMovieDetails(false)}>
+    onClick={() => setSelectedMovieID([])}>
     &larr;
   </button>
 }
@@ -284,9 +287,9 @@ function Movie({ movie }) {
     <img src={movie.Poster} alt={movie.Title} />
     <div>
       <h3> {movie.Title}</h3>
-      <span>{movie.DVD}  &#9679; {movie.Runtime}</span>
+      <span>{movie.DVD}  &bull; {movie.Runtime}</span>
       <span>{movie.Genre}</span>
-      <p> ⭐{movie.Ratings[0].Value.slice(0, 3)} IMDB rating</p>
+      <p> ⭐{movie.imdbRating} IMDB rating</p>
     </div>
   </div>
 }

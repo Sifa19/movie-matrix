@@ -111,11 +111,16 @@ body {
   display: flex;
   /* align-items: center; */
   gap: 1rem;
+  cursor: pointer;
 }
 
 .list li img {
   height: 13vh;
   width: 8vw;
+}
+
+.list-hover-effect:hover {
+  background-color: var(--color-background-100);
 }
 
 .summary {
