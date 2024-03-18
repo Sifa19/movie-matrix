@@ -56,11 +56,12 @@ const KEY = "67da6b37";
 
 export default function App() {
   const [movies, setMovies] = useState([]);
-  const [watchedMovies, setWatchedMovies] = useState(tempWatchedData);
+  const [watchedMovies, setWatchedMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState("")
   const [query, setQuery] = useState("interstellar")
-  const [selectedMovieId, setSelectedMovieID] = useState(tempMovieData[0])
+  const [selectedMovieId, setSelectedMovieID] = useState(null)
+  const [isClose, setIsClose] = useState(false)
 
   // http://www.omdbapi.com/?apikey=${KEY}&s=${query}&plot=full
 
@@ -69,11 +70,15 @@ export default function App() {
   // https://tv-api.com/en/API/SearchMovie/k_b58hmvfi/inception 2010
 
   useEffect(function () {
+
+    const controller = new AbortController();
+
     async function fetchMovies() {
       try {
         setIsError("")
         const res = await fetch(
-          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}&plot=full`
+          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}&plot=full`,
+          { signal: controller.signal }
         );
         // console.log(res);
         if (!res.ok)
@@ -85,6 +90,7 @@ export default function App() {
           throw new Error("movie not found")
 
         setMovies(data.Search);
+        setIsError('')
 
       } catch (err) {
         console.log(err);
@@ -104,6 +110,10 @@ export default function App() {
     }
 
     fetchMovies();
+
+    return function () {
+      return controller.abort();
+    }
   }, [query]);
 
   return (
@@ -118,28 +128,25 @@ export default function App() {
           {isLoading && <Loading />}
           {!isLoading && !isError &&
             <List data={movies}
-              setSelectedMovieID={setSelectedMovieID} />}
+              setSelectedMovieID={setSelectedMovieID}
+              setIsClose={setIsClose} />}
           {isError && <Error message={isError} />}
         </Box>
         <Box>
           {
-            selectedMovieId.length > 0 ?
+            isClose ?
               <MovieDetails
                 selectedMovieId={selectedMovieId}
-                setSelectedMovieID={setSelectedMovieID} />
+                watchedMovies={watchedMovies}
+                setWatchedMovies={setWatchedMovies}
+                setIsClose={setIsClose} />
               :
               <>
-                <div className="summary">
-                  <h4>MOVIES YOU WATCHED</h4>
-                  <div className="summary-details">
-                    <span>🎞️2 Movies</span>
-                    <span>⭐8.65</span>
-                    <span>🌟9.5</span>
-                    <span>⌛132min</span>
-                  </div>
-                </div>
-                <List data={watchedMovies}
-                  setSelectedMovieID={setSelectedMovieID} />
+                <WatchedSummary watchedMovies={watchedMovies} />
+                <WatchedList data={watchedMovies}
+                  setWatchedMovies={setWatchedMovies}
+                  setSelectedMovieID={setSelectedMovieID}
+                  setIsClose={setIsClose} />
               </>
           }
         </Box>
@@ -195,10 +202,11 @@ function Box({ children }) {
   );
 }
 
-function List({ data, setSelectedMovieID }) {
+function List({ data, setSelectedMovieID, setIsClose }) {
 
   function handleSetMovie(movie) {
     setSelectedMovieID(s => movie.imdbID)
+    setIsClose(true)
   }
 
   return (
@@ -218,11 +226,87 @@ function List({ data, setSelectedMovieID }) {
   );
 }
 
-function MovieDetails({ selectedMovieId, setSelectedMovieID }) {
+function WatchedSummary({ watchedMovies }) {
+
+  const averageImdbRating = (watchedMovies.map(m => Number(m.imdbRating)).reduce((acc, val) => acc + val, 0) / watchedMovies.length).toFixed(2)
+
+  const averageUserRating = (watchedMovies.map(m => Number(m.starRating)).reduce((acc, val) => acc + val, 0) / watchedMovies.length).toFixed(2)
+
+  const averageMovieTime = (watchedMovies.map(m => parseInt(m.Runtime)).reduce((acc, val) => acc + val, 0)).toFixed(0)
+
+  return <div className="summary">
+    <h4>MOVIES YOU WATCHED</h4>
+    <div className="summary-details">
+      <span>🎞️{watchedMovies.length} Movies</span>
+      <span>⭐{averageImdbRating > 0 ? averageImdbRating : "0"}</span>
+      <span>🌟{averageUserRating > 0 ? averageUserRating : "0"}</span>
+      <span>⌛{averageMovieTime}</span>
+    </div>
+  </div>
+}
+
+function WatchedList({ data, setWatchedMovies, setSelectedMovieID, setIsClose }) {
+
+  function handleSetMovie(movie) {
+    setSelectedMovieID(s => movie.imdbID)
+    setIsClose(true)
+  }
+
+  function removeMovie(id) {
+    const updatedList = data.filter(d => d.imdbID !== id)
+    setWatchedMovies(updatedList)
+  }
+
+  return (
+    <ul className="list">
+      {data.map((i) => (
+        <>
+          <button className="remove-movie" onClick={() => removeMovie(i.imdbID)}>x</button>
+          <li key={i.imdbID}
+            onClick={() => handleSetMovie(i)}
+            className="list-hover-effect">
+            <img src={i.Poster} alt={i.Title} />
+            <div>
+              <h4>{i.Title}</h4>
+              <div>
+                <span>⭐{i.imdbRating} </span>
+                <span>🌟 {i.starRating} </span>
+                <span>⌛{i.Runtime}</span>
+              </div>
+            </div>
+          </li>
+
+        </>
+      ))}
+    </ul>
+  );
+}
+
+
+function MovieDetails({ selectedMovieId, watchedMovies, setWatchedMovies, setIsClose }) {
 
   const [movie, setMovie] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [starRating, setStarRating] = useState(0);
+
+  const isWatched = watchedMovies.map(m => m.imdbID).includes(selectedMovieId)
+
+  const userRating = watchedMovies.find(m => m.imdbID === selectedMovieId)?.starRating
+
+  function handleAddtoWatchedMovies() {
+
+    const newWatchedMovie = {
+      imdbID: movie.imdbID,
+      imdbRating: movie.imdbRating,
+      Title: movie.Title,
+      Year: movie.Year,
+      Poster: movie.Poster,
+      Runtime: movie.Runtime,
+      starRating: starRating
+    }
+    setWatchedMovies(s => [...s, newWatchedMovie]);
+    setIsClose(false)
+  }
 
   useEffect(function () {
     async function getMovieDetails() {
@@ -233,7 +317,6 @@ function MovieDetails({ selectedMovieId, setSelectedMovieID }) {
           throw new Error("Data Not Found")
 
         const data = await res.json();
-        console.log(data);
         setMovie(data)
         setIsLoading(false)
       }
@@ -245,20 +328,40 @@ function MovieDetails({ selectedMovieId, setSelectedMovieID }) {
     getMovieDetails()
   }, [selectedMovieId])
 
+  useEffect(function () {
+    if (!movie.Title) return;
+    document.title = "MOVIE: " + movie.Title
+
+    return function () {
+      document.title = "Matrix"
+    }
+  }, [movie.Title])
+
   return <>
     {
       isLoading ?
         <Loading /> :
         <div className="movie-details">
           <Button
-            setSelectedMovieID={setSelectedMovieID} />
+            setIsClose={setIsClose} />
           <Movie movie={movie} />
-          <StarRating
-            maxRating={5}
-            setStarRating={setStarRating}
-            size="1.8"
-            startStyle="star-container"
-            key={selectedMovieId + 10} />
+          <div className="star-container">
+            {!isWatched ? <>
+              <StarRating
+                maxRating={5}
+                setStarRating={setStarRating}
+                size="1.8"
+                key={selectedMovieId + 10} />
+              {
+                starRating > 0 && <button className="add-to-list" onClick={handleAddtoWatchedMovies}>+ Add To list</button>
+              }
+            </>
+              :
+              <div className="add-to-list">
+                You Rated This Movie {userRating} ⭐
+              </div>
+            }
+          </div>
           <TextExpander
             data={movie.Plot}
             showDefault={false}
@@ -275,9 +378,9 @@ function MovieDetails({ selectedMovieId, setSelectedMovieID }) {
   </>
 }
 
-function Button({ setSelectedMovieID }) {
+function Button({ setIsClose }) {
   return <button className="btn-movie-details"
-    onClick={() => setSelectedMovieID([])}>
+    onClick={() => setIsClose(false)}>
     &larr;
   </button>
 }

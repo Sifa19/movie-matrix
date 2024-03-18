@@ -103,13 +103,19 @@ body {
   align-items: center;
 }
 
+.list {
+  position: relative;
+  margin-top: 0.5rem;
+}
+
 .list li {
   height: 20vh;
   list-style: none;
   padding: 1.6rem 3.2rem;
   border-bottom: 1px solid var(--color-background-100);
   display: flex;
-  /* align-items: center; */
+  align-items: center;
+  justify-content: space-evenly;
   gap: 1rem;
   cursor: pointer;
 }
@@ -117,6 +123,24 @@ body {
 .list li img {
   height: 13vh;
   width: 8vw;
+}
+
+.remove-movie {
+  font-weight: bolder;
+  border: none;
+  padding: 0.1rem 0.45rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  background-color: var(--color-red);
+
+  position: absolute;
+  right: 1rem;
+  /* top: 10px; */
+}
+
+.remove-movie:hover {
+  background-color: var(--color-red-dark);
 }
 
 .list-hover-effect:hover {
@@ -186,8 +210,36 @@ body {
   width: 90%;
   padding: 1rem 2rem;
 }
+.add-to-list {
+  border: none;
+  width: 100%;
+  padding: 0.5rem 0;
+  border-radius: 5rem;
+  background-color: var(--color-primary);
+  color: var(--color-text);
+  box-shadow: 2px 4px 8px black;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 .text-container {
   display: flex;
   flex-direction: column;
   width: 90%;
+}
+
+@media screen and (min-width: 900px) {
+  .main {
+    display: flex;
+    justify-content: center;
+    gap: 4rem;
+  }
+  .box {
+    width: 40%;
+  }
+
+  .list li img {
+    width: 6vw;
+  }
 }
