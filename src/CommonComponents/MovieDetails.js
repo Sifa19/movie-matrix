@@ -9,7 +9,7 @@ const KEY = "67da6b37";
 export default function MovieDetails({
     selectedMovieId,
     watchedMovies,
-    setWatchedMovies,
+    handleAddWatched,
     setIsClose,
 }) {
     const [movie, setMovie] = useState({});
@@ -34,7 +34,7 @@ export default function MovieDetails({
             Runtime: movie.Runtime,
             starRating: starRating,
         };
-        setWatchedMovies((s) => [...s, newWatchedMovie]);
+        handleAddWatched(newWatchedMovie);
         setIsClose(false);
     }
 

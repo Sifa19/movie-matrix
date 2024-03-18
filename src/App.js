@@ -21,16 +21,30 @@ const KEY = "67da6b37";
 
 export default function App() {
   const [movies, setMovies] = useState([]);
-  const [watchedMovies, setWatchedMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState("");
-  const [query, setQuery] = useState("interstellar");
+  const [query, setQuery] = useState(null);
   const [selectedMovieId, setSelectedMovieID] = useState(null);
   const [isClose, setIsClose] = useState(false);
+
+  const [watchedMovies, setWatchedMovies] = useState(function () {
+    const storedData = localStorage.getItem('watchedMovies')
+    return JSON.parse(storedData)
+  });
+
+
+  function handleAddWatched(movie) {
+    setWatchedMovies((movies) => {
+      return [...movies, movie]
+    });
+  }
 
   useEffect(
     function () {
       const controller = new AbortController();
+
+      if (query === null)
+        return
 
       async function fetchMovies() {
         try {
@@ -73,6 +87,12 @@ export default function App() {
     [query]
   );
 
+  useEffect(function () {
+    localStorage.setItem('watchedMovies', JSON.stringify(watchedMovies))
+  }, [watchedMovies])
+
+
+
   return (
     <div className="container">
       <Navbar>
@@ -83,7 +103,7 @@ export default function App() {
 
       <Main>
         <Box>
-          {isLoading && <Loading />}
+          {isLoading && query && <Loading />}
 
           {!isLoading && !isError && (
             <List
@@ -101,7 +121,7 @@ export default function App() {
             <MovieDetails
               selectedMovieId={selectedMovieId}
               watchedMovies={watchedMovies}
-              setWatchedMovies={setWatchedMovies}
+              handleAddWatched={handleAddWatched}
               setIsClose={setIsClose}
             />
           ) : (
