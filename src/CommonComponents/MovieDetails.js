@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 
 import Movie from "./Movie";
-import StarRating from "./StarRating";
-import TextExpander from "./TextExpander";
+import StarRating from "../Components/StarRating";
+import TextExpander from "../Components/TextExpander";
 import Loading from "./Loading";
 
 const KEY = "67da6b37";
@@ -15,6 +15,13 @@ export default function MovieDetails({
     const [movie, setMovie] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [starRating, setStarRating] = useState(0);
+
+    const countStartRating = useRef(0)
+
+    useEffect(function () {
+        if (starRating)
+            countStartRating.current = countStartRating.current + 1
+    }, [starRating])
 
     const isWatched = watchedMovies
         .map((m) => m.imdbID)
